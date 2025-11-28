@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoubleRangeSlider demo</title>
+    <style type="text/css">
+        :root {
+            --drs-background-color: green;
+        }
+        .values-monitor {
+            display: flex; 
+            column-gap: 0.5em;
+        }
+        double-range-slider {
+            width: 20em;
+        }
+    </style>
+    <!--
+    <script type="importmap">
+        {
+            "imports": {
+                "test": "./test.js"
+            }
+        }
+    </script>
+    -->
+</head>
+<body>
+    <h1>DoubleRangeSlider demo</h1>
+    <double-range-slider></double-range-slider>
+    <br>
+    <div class="values-monitor">
+        <span id="min"></span>
+        <span>-</span>
+        <span id="max"></span>
+    </div>
+    <script type="module">
+        import {DoubleRangeSlider} from "./dist/double-range-slider.js";
+
+        DoubleRangeSlider.register();
+        const drs = document.querySelector("double-range-slider");
+        const min = document.querySelector("#min");
+        const max = document.querySelector("#max");
+        drs.addEventListener("input", event => {
+            const range = event.detail;
+            min.textContent = range[0].toString();
+            max.textContent = range[1].toString();
+        });
+
+
+    </script>
+</body>
+</html>

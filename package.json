@@ -1,0 +1,41 @@
+{
+  "name": "double-range-slider",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "types": "./dist/double-range-slider.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/double-range-slider.d.ts",
+        "default": "./dist/double-range-slider.js"
+      }
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "scripts": {
+    "build": "del-cli dist && tsc",
+    "prepack": "npm run build",
+    "docs": "npx typedoc ./src/double-range-slider.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cnoelle/double-range-slider.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cnoelle/double-range-slider/issues"
+  },
+  "homepage": "https://github.com/cnoelle/double-range-slider",
+  "devDependencies": {
+    "del-cli": "^7.0.0",
+    "typedoc": "^0.28.14",
+    "typescript": "^5.9.3"
+  }
+}
