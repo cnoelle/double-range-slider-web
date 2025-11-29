@@ -39,8 +39,20 @@ export class DoubleRangeSlider extends HTMLElement {
     constructor() {
         super();
         const style: HTMLStyleElement = document.createElement("style");
-        style.textContent = ":host {--drs-point-radius: 5px; } \n" + 
-            ".slider-container {display: flex; padding-right: calc(2 * var(--drs-point-radius)); }\n";
+        style.textContent = ":host {--dri-point-radius: 5px; --dri-track-height: 4px; "+
+                "--dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
+                "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " + 
+                "--dri-position-0: 0%; --dri-position-1: 100%  } \n" + 
+            ".slider-container {display: flex; padding-right: calc(2 * var(--dri-point-radius)); }\n" +
+            "input { appearance: none; border-radius: 0; margin: 0; outline: 0;}\n" + 
+            "input::-moz-range-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
+            "input:first-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
+            "input:last-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
+            "input::-moz-range-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
+            "input::-webkit-slider-runnable-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
+            "input:first-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
+            "input:last-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
+            "input::-webkit-slider-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n";
         const shadow: ShadowRoot = this.attachShadow({mode: "open", delegatesFocus: true});
         shadow.appendChild(style);
         const container = createElement("div", {parent: shadow});
@@ -54,8 +66,10 @@ export class DoubleRangeSlider extends HTMLElement {
         min.max = midVal.toString();
         max.min = midVal.toString();
         max.max = maxVal.toString();
-        min.style.width = "calc(50% + var(--drs-point-radius))";
-        max.style.width = "calc(50% + var(--drs-point-radius))";
+        min.style.width = "calc(50% + var(--dri-point-radius))";
+        max.style.width = "calc(50% + var(--dri-point-radius))";
+        min.value = min.min;
+        max.value = max.max;
         this.#min = min;
         this.#max = max;
         const changeListener = this.changed.bind(this);
@@ -140,8 +154,13 @@ export class DoubleRangeSlider extends HTMLElement {
         const range = this.#range[1] - this.#range[0];
         const minPercentage = (midPoint - this.#range[0])/range * 100;
         const maxPercentage = (this.#range[1] - midPoint)/range * 100;
-        this.#min.style.width = `calc(${minPercentage}% + var(--drs-point-radius))`;
-        this.#max.style.width = `calc(${maxPercentage}% + var(--drs-point-radius))`;
+        this.#min.style.width = `calc(${minPercentage}% + var(--dri-point-radius))`;
+        this.#max.style.width = `calc(${maxPercentage}% + var(--dri-point-radius))`;
+        const sliderPos0 = (valueMin-this.#range[0])/(midPoint - this.#range[0])*100;
+        const sliderPos1 = (valueMax-midPoint)/(this.#range[1] - midPoint)*100;
+
+        this.style.setProperty("--dri-position-0", `${sliderPos0}%`);
+        this.style.setProperty("--dri-position-1", `${sliderPos1}%`);
     }
 
     #adaptRange(valueMin: number, valueMax: number, options?: {setLower?: boolean; setUpper?: boolean;}) {
