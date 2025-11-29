@@ -7,8 +7,8 @@ export class DoubleRangeSlider extends HTMLElement {
     static #tag: string|undefined;
     // min/max values
     #range: [number, number] = [...DoubleRangeSlider.#DEFAULT_RANGE];
+    #values: [number, number] = [...DoubleRangeSlider.#DEFAULT_RANGE];
     #midPoint: number = DoubleRangeSlider.#DEFAULT_RANGE[1]/2;
-    #step: number|undefined = 1;  // undefined means "any"
 
     // cf. https://developer.mozilla.org/de/docs/Web/HTML/Reference/Elements/input/range
     static observedAttributes = ["list", "min", "max", "step"];
@@ -81,9 +81,11 @@ export class DoubleRangeSlider extends HTMLElement {
         event.stopPropagation();
         const min = parseFloat(this.#min.value);
         const max = parseFloat(this.#max.value);
-        const center = this.#findMidpoint(parseFloat(this.#min.min), min, max, this.stepNumeric);
+        if (min === this.#values[0] && max === this.#values[1])
+            return;
+        const center = this.#findMidpoint(parseFloat(this.#min.min), min, max, this.step);
         if (center !== this.#midPoint && Number.isFinite(center))
-            this.#setMidpoint(center);
+            this.#setMidpoint(center, min, max);
         this.#dispatch(event.type as "input"|"change");
     }
 
@@ -129,8 +131,9 @@ export class DoubleRangeSlider extends HTMLElement {
         this.#max.value = newSelected[1].toString();
     }
 
-    #setMidpoint(midPoint: number) {
+    #setMidpoint(midPoint: number, valueMin: number, valueMax: number) {
         this.#midPoint = midPoint;
+        this.#values = [valueMin, valueMax];
         this.#min.max = midPoint.toString();
         this.#max.min = midPoint.toString();
         this.#midPoint = midPoint;
@@ -142,8 +145,8 @@ export class DoubleRangeSlider extends HTMLElement {
     }
 
     #adaptRange(valueMin: number, valueMax: number, options?: {setLower?: boolean; setUpper?: boolean;}) {
-        const midPoint = this.#findMidpoint(this.min, valueMin, valueMax, this.stepNumeric);
-        this.#setMidpoint(midPoint);
+        const midPoint = this.#findMidpoint(this.min, valueMin, valueMax, this.step);
+        this.#setMidpoint(midPoint, valueMin, valueMax);
         if (options?.setLower)
             this.#min.value = valueMin.toString();
         if (options?.setUpper)
@@ -162,13 +165,7 @@ export class DoubleRangeSlider extends HTMLElement {
     }
 
     getValues(): [number, number] {
-        let min = parseFloat(this.#min.value);
-        if (!Number.isFinite(min))
-            min = this.#range[0];
-        let max = parseFloat(this.#max.value);
-        if (!Number.isFinite(max))
-            max = this.#range[1];
-        return [min, max];
+        return [...this.#values];
     }
 
     get min(): number {
@@ -189,23 +186,20 @@ export class DoubleRangeSlider extends HTMLElement {
             this.setAttribute("max", max.toString());
     }
 
-    get step(): number|string|undefined {
-        const step = this.#min.getAttribute("step");
-        const asNumber = parseFloat(step!);
-        return Number.isFinite(asNumber) ? asNumber : (step || undefined);
-    }
-
-    set step(step: number|string|undefined) {
-        if (step)
-            this.setAttribute("step", step!.toString());
+    set step(step: number|undefined) {
+        if (step === undefined)
+            this.setAttribute("step", "any");
+        else if (Number.isFinite(step) && step > 0)
+            this.setAttribute("step", step.toString());
         else
-            this.removeAttribute("step");
+            throw new Error(`Invalid step ${step}`);
     }
 
-    get stepNumeric(): number|undefined {
+    get step(): number|undefined {
         const step = this.#min.getAttribute("step");
-        const asNumber = parseFloat(step!);
-        return Number.isFinite(asNumber) ? asNumber : undefined;
+        if (step === "any")
+            return undefined;
+        return parseFloat(step!) || 1;
     }
 
 }
