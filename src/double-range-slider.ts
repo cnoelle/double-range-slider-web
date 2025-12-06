@@ -75,7 +75,7 @@ export class DoubleRangeSlider extends HTMLElement {
             "input::-webkit-slider-runnable-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
             "input:first-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
             "input:last-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
-            "input::-webkit-slider-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
+            "input::-webkit-slider-thumb { -webkit-appearance: none; margin-top: calc(var(--dri-track-height) / 2); transform: translateY(-50%); background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
             "input:hover::-webkit-slider-thumb {background-color: var(--dri-thumb-hover-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input:active::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input:focus-visible::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
@@ -93,9 +93,9 @@ export class DoubleRangeSlider extends HTMLElement {
             "input:disabled:hover {cursor: not-allowed}\n" + 
             // tooltip
             ".slider-tooltip {position: absolute; position-area: top center; z-index: var(--dri-tooltip-z-index); }\n" +
-            "input:first-child::-moz-range-thumb { anchor-name: --thumb1; }\n" + // TODO check this works correctly with multiple elements on a page
+            "input:first-child::-moz-range-thumb { anchor-name: --thumb1; }\n" +
             "input:first-child::-webkit-slider-thumb { anchor-name: --thumb1; }\n" +
-            "input:last-child::-moz-range-thumb { anchor-name: --thumb2; }\n" + // TODO check this works correctly with multiple elements on a page
+            "input:last-child::-moz-range-thumb { anchor-name: --thumb2; }\n" +
             "input:last-child::-webkit-slider-thumb { anchor-name: --thumb2; }\n" +
             ".tt1 {position-anchor: --thumb1; }\n" +
             ".tt2 {position-anchor: --thumb2; }\n" +

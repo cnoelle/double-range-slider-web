@@ -6,7 +6,7 @@
     <title>DoubleRangeSlider demo</title>
     <style type="text/css">
         :root {
-            --drs-background-color: green;
+            --dri-background-color: green;
         }
         .values-monitor {
             display: flex; 
@@ -14,6 +14,12 @@
         }
         double-range-slider {
             width: 20em;
+        }
+        .slider-styled {
+            --dri-track-filled-color: green;
+            --dri-thumb-color: lightgreen;
+            --dri-thumb-hover-color: darkgreen;
+            --dri-thumb-active-color: darkgreen;
         }
     </style>
     <!--
@@ -35,6 +41,9 @@
         <span>-</span>
         <span id="max"></span>
     </div>
+    <br>
+    <br>
+     <double-range-slider id="slider2" class="slider-styled"></double-range-slider>
     <script type="module">
         import {DoubleRangeSlider} from "./dist/double-range-slider.js";
 
@@ -48,6 +57,8 @@
             max.textContent = range[1].toString();
         });
         drs.setTooltipFormatter(value => value.toFixed(0));
+        const slider2 = document.querySelector("#slider2");
+        slider2.setTooltipFormatter(value => value.toFixed(0));
     </script>
 </body>
 </html>
