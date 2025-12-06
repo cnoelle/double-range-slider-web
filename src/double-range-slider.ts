@@ -36,6 +36,21 @@ export class DoubleRangeSlider extends HTMLElement {
     readonly #sliderContainer: HTMLElement;
     readonly #min: HTMLInputElement;
     readonly #max: HTMLInputElement;
+    readonly #inputs: Array<HTMLInputElement>;
+    readonly #tooltip1: HTMLElement;
+    readonly #tooltip2: HTMLElement;
+    readonly #tooltips: Array<HTMLElement>;
+    readonly #interactionStartListener: (event: PointerEvent) => void;
+    readonly #interactionEndListener: (event: PointerEvent) => void;
+    readonly #hoverTooltip: HTMLElement;
+    readonly #hoverStartListener: (event: PointerEvent) => void;
+    readonly #hoverEndListener: (event: PointerEvent) => void;
+    readonly #hoverMoveListener: (event: PointerEvent) => void;
+    #tooltipFormatter: ((data: number) => string|HTMLElement)|undefined;
+    #ttHover: boolean = false;
+    #ttClick: boolean = false;
+    #interactionActive: boolean = false;
+    #hoverActive: boolean = false;
 
     constructor() {
         super();
@@ -44,9 +59,10 @@ export class DoubleRangeSlider extends HTMLElement {
                 "--dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
                 "--dri-track-filled-color-disabled: #777; " +
                 "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " +
-                "--dri-thumb-hover-color: #fb8cc9ff; --dri-thumb-active-color: #fb8cc9ff;} \n" + 
+                "--dri-thumb-hover-color: #fb8cc9ff; --dri-thumb-active-color: #fb8cc9ff; --dri-thumb-disabled-color: #777; --dri-tooltip-z-index: 1} \n" + 
             ".slider-container {display: flex; padding-right: calc(2 * var(--dri-thumb-width)); --dri-position-0: 0%; --dri-position-1: 100%; }\n" +
             "input { appearance: none; border-radius: 0; margin: 0; outline: 0;}\n" + 
+            // firefox
             "input::-moz-range-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
             "input:first-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
             "input:last-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
@@ -54,6 +70,7 @@ export class DoubleRangeSlider extends HTMLElement {
             "input:hover::-moz-range-thumb {background-color: var(--dri-thumb-hover-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input:active::-moz-range-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input:focus-visible::-moz-range-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            // webkit
             "input::-webkit-slider-runnable-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
             "input:first-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
             "input:last-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
@@ -64,9 +81,24 @@ export class DoubleRangeSlider extends HTMLElement {
             // disabled state
             "input:first-child:disabled::-moz-range-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color-disabled) var(--dri-position-0), var(--dri-track-filled-color-disabled)); }\n" +
             "input:last-child:disabled::-moz-range-track { background: linear-gradient(to right, var(--dri-track-filled-color-disabled) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" + 
+            "input:disabled:hover::-moz-range-thumb {background-color: var(--dri-thumb-disabled-color); }\n" +
+            "input:disabled:active::-moz-range-thumb {background-color: var(--dri-thumb-disabled-color);  }\n" +
+            "input:disabled:focus-visible::-moz-range-thumb {background-color: var(--dri-thumb-disabled-color);  }\n" +
             "input:first-child:disabled::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color-disabled) var(--dri-position-0), var(--dri-track-filled-color-disabled)); }\n" +
             "input:last-child:disabled::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color-disabled) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
-            "input:disabled:hover {cursor: not-allowed}";
+            "input:disabled:hover::-webkit-slider-thumb {background-color: var(--dri-thumb-disabled-color); }\n" +
+            "input:disabled:active::-webkit-slider-thumb {background-color: var(--dri-thumb-disabled-color);  }\n" +
+            "input:disabled:focus-visible::-webkit-slider-thumb {background-color: var(--dri-thumb-disabled-color);  }\n" +
+            "input:disabled:hover {cursor: not-allowed}\n" + 
+            // tooltip
+            ".slider-tooltip {position: absolute; position-area: top center; z-index: var(--dri-tooltip-z-index); }\n" +
+            "input:first-child::-moz-range-thumb { anchor-name: --thumb1; }\n" + // TODO check this works correctly with multiple elements on a page
+            "input:first-child::-webkit-slider-thumb { anchor-name: --thumb1; }\n" +
+            "input:last-child::-moz-range-thumb { anchor-name: --thumb2; }\n" + // TODO check this works correctly with multiple elements on a page
+            "input:last-child::-webkit-slider-thumb { anchor-name: --thumb2; }\n" +
+            ".tt1 {position-anchor: --thumb1; }\n" +
+            ".tt2 {position-anchor: --thumb2; }\n" +
+            ".hidden {display: none;}";
         const shadow: ShadowRoot = this.attachShadow({mode: "open", delegatesFocus: true});
         shadow.appendChild(style);
         const container = createElement("div", {parent: shadow});
@@ -87,22 +119,23 @@ export class DoubleRangeSlider extends HTMLElement {
         max.value = max.max;
         this.#min = min;
         this.#max = max;
+        this.#inputs = [min, max];
         const changeListener = this.changed.bind(this);
-        //const clickListener = this.clicked.bind(this);
         min.addEventListener("input", changeListener);
         max.addEventListener("input", changeListener);
         min.addEventListener("change", changeListener);
         max.addEventListener("change", changeListener);
-        /*
-        min.addEventListener("click", clickListener);
-        max.addEventListener("click", clickListener);
-        */
+        this.#interactionStartListener = this.#interactionStart.bind(this);
+        this.#interactionEndListener = this.#interactionEnd.bind(this);
+        this.#tooltip1 = createElement("div", {parent: shadow, classes: ["slider-tooltip", "tt1", "hidden"]});
+        this.#tooltip2 = createElement("div", {parent: shadow, classes: ["slider-tooltip", "tt2", "hidden"]});
+        this.#tooltips = [this.#tooltip1, this.#tooltip2];
+        this.#hoverStartListener = this.#hoverStart.bind(this);
+        this.#hoverEndListener = this.#hoverEnd.bind(this);
+        this.#hoverMoveListener = this.#hoverMove.bind(this);
+        this.#hoverTooltip = createElement("div", {parent: shadow, classes: ["slider-tooltip", "hidden"]});
+        [this.#tooltip1, this.#tooltip2, this.#hoverTooltip].forEach(tt => createElement("output", {parent: tt}));
     }
-
-    /*  // probably no need for explicit listener, handled via input or change
-    clicked(event: MouseEvent) {
-    }
-        */
 
     changed(event: Event) {
         event.preventDefault();
@@ -115,9 +148,109 @@ export class DoubleRangeSlider extends HTMLElement {
         const center = this.#findMidpoint(parseFloat(this.#min.min), min, max, this.step);
         if (Number.isFinite(center)) {
             this.#setMidpoint(center, min, max);
+            if (this.#interactionActive) {
+                const formatter = this.#tooltipFormatter;
+                if (formatter) {
+                    DoubleRangeSlider.#setTooltipContent(this.#tooltip1, formatter(min));
+                    DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
+                }
+            }
             this.#dispatch(event.type as "input"|"change");
         }
     }
+
+    static #setTooltipContent(tt: HTMLElement, content: string|HTMLElement) {
+        const out: HTMLOutputElement = tt.querySelector("output")!;
+        while (out.firstChild)
+            out.firstChild.remove();
+        if (content instanceof HTMLElement)
+            out.appendChild(content);
+        else
+            out.textContent = content;
+    }
+
+    #enableTooltip() {
+        this.#inputs.forEach(inp => {
+            if (this.#ttClick) {
+                inp.addEventListener("pointerdown", this.#interactionStartListener);
+                inp.addEventListener("pointerup", this.#interactionEndListener);
+            }
+            if (this.#ttHover) {
+                inp.addEventListener("pointerenter", this.#hoverStartListener);
+                inp.addEventListener("pointerleave", this.#hoverEndListener);
+            }
+        });
+    }
+
+    #disableTooltip() {
+        this.#inputs.forEach(inp => {
+            inp.removeEventListener("pointerdown", this.#interactionStartListener);
+            inp.removeEventListener("pointerup", this.#interactionEndListener);
+            inp.removeEventListener("pointerenter", this.#hoverStartListener);
+            inp.removeEventListener("pointerleave", this.#hoverEndListener);
+        });
+        this.#hoverEnd();
+        this.#interactionEnd();
+    }
+
+    #interactionStart() {
+        if (this.disabled)
+            return;
+        const formatter = this.#tooltipFormatter;
+        if (formatter) {
+            const [min, max] = this.#values;
+            DoubleRangeSlider.#setTooltipContent(this.#tooltip1, formatter(min));
+            DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
+            this.#interactionActive = true;
+            this.#tooltips.forEach(t => t.classList.remove("hidden"));
+        }
+        this.#hoverEnd();
+    }
+
+    #interactionEnd() {
+        this.#interactionActive = false;
+        this.#tooltips.forEach(t => t.classList.add("hidden"));
+    }
+
+    #hoverStart(event: PointerEvent) {
+        if (this.#interactionActive || this.disabled)
+            return;
+        const formatter = this.#tooltipFormatter;
+        if (formatter) {
+            this.#hoverActive = true;
+            this.#hoverMove(event);
+            this.#hoverTooltip.classList.remove("hidden");
+            const inp = event.currentTarget as HTMLInputElement;
+            inp.addEventListener("pointermove", this.#hoverMoveListener);
+        }
+    }
+
+    #hoverMove(event: PointerEvent) {
+        const formatter = this.#tooltipFormatter;
+        if (!this.#hoverActive || !formatter)
+            return;
+        const inp = event.currentTarget as HTMLInputElement;
+        const min = parseFloat(inp?.min);
+        const max = parseFloat(inp?.max);
+        if (isFinite(min) && isFinite(max)) {
+            const rect: DOMRect = (event.currentTarget as HTMLElement).getClientRects()[0];
+            const left = rect.y;
+            const right = rect.x + rect.width;
+            // not in range 0..1 !
+            const frac = (event.clientX - left)/(right-left);  // clientX correct?
+            const value = min + frac * (max-min);
+            DoubleRangeSlider.#setTooltipContent(this.#hoverTooltip, formatter(value));
+            this.#hoverTooltip.style.left = event.clientX + "px";
+            this.#hoverTooltip.style.top = (rect.top - 20) + "px";
+        }
+    }
+
+    #hoverEnd() {
+        this.#hoverActive = false;
+        this.#hoverTooltip.classList.add("hidden");
+        this.#inputs.forEach(inp => inp.removeEventListener("pointermove", this.#hoverMoveListener));
+    }
+
 
     #dispatch(type: "input"|"change") {
         this.dispatchEvent(new CustomEvent<[number, number]>(type, {detail: this.getValues()}));
@@ -141,6 +274,8 @@ export class DoubleRangeSlider extends HTMLElement {
             if (newValue !== null) {
                 this.#min.setAttribute(name, newValue);
                 this.#max.setAttribute(name, newValue);
+                if (name === "disabled")
+                    this.#interactionEnd();
             } else {
                 this.#min.removeAttribute(name);
                 this.#max.removeAttribute(name);
@@ -247,6 +382,24 @@ export class DoubleRangeSlider extends HTMLElement {
             this.setAttribute("disabled", "disabled");
         else
             this.removeAttribute("disabled");
+    }
+
+    getTooltipFormatter(): ((data: number) => string|HTMLElement)|undefined {
+        return this.#tooltipFormatter;
+    }
+
+    setTooltipFormatter(f: ((data: number) => string|HTMLElement)|undefined, options?: {hoverActive?: boolean; clickActive?: boolean;}) {
+        if (!f) {
+            this.#disableTooltip();
+        } else {
+            if (typeof f !== "function")
+                throw new Error("Unsupported formatter, must be a function of the numeric value.")
+            this.#ttHover = typeof options?.hoverActive === "undefined" ? true : options.hoverActive!;
+            this.#ttClick = typeof options?.clickActive === "undefined" ? true : options.clickActive!;
+            this.#enableTooltip();
+        }
+        this.#tooltipFormatter = f;
+
     }
 
 }
