@@ -33,30 +33,38 @@ export class DoubleRangeSlider extends HTMLElement {
         return DoubleRangeSlider.#tag;
     }
 
+    readonly #sliderContainer: HTMLElement;
     readonly #min: HTMLInputElement;
     readonly #max: HTMLInputElement;
 
     constructor() {
         super();
         const style: HTMLStyleElement = document.createElement("style");
-        style.textContent = ":host {--dri-point-radius: 5px; --dri-track-height: 4px; "+
+        style.textContent = ":host {--dri-track-height: 4px; "+
                 "--dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
-                "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " + 
-                "--dri-position-0: 0%; --dri-position-1: 100%  } \n" + 
-            ".slider-container {display: flex; padding-right: calc(2 * var(--dri-point-radius)); }\n" +
+                "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " +
+                "--dri-thumb-hover-color: #fb8cc9ff; --dri-thumb-active-color: #fb8cc9ff;} \n" + 
+            ".slider-container {display: flex; padding-right: calc(2 * var(--dri-thumb-width)); --dri-position-0: 0%; --dri-position-1: 100%; }\n" +
             "input { appearance: none; border-radius: 0; margin: 0; outline: 0;}\n" + 
             "input::-moz-range-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
             "input:first-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
             "input:last-child::-moz-range-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
             "input::-moz-range-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
+            "input:hover::-moz-range-thumb {background-color: var(--dri-thumb-hover-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            "input:active::-moz-range-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            "input:focus-visible::-moz-range-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input::-webkit-slider-runnable-track {width: 100%; height: var(--dri-track-height); cursor: pointer; }\n" +
             "input:first-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color) var(--dri-position-0), var(--dri-track-filled-color)); }\n" +
             "input:last-child::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
-            "input::-webkit-slider-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n";
+            "input::-webkit-slider-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
+            "input:hover::-webkit-slider-thumb {background-color: var(--dri-thumb-hover-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            "input:active::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            "input:focus-visible::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }";
         const shadow: ShadowRoot = this.attachShadow({mode: "open", delegatesFocus: true});
         shadow.appendChild(style);
         const container = createElement("div", {parent: shadow});
         const sliderContainer = createElement("div", {parent: container, classes: "slider-container"});
+        this.#sliderContainer = sliderContainer;
         const min = createElement("input", {attributes: {type: "range"}, parent: sliderContainer});
         const max = createElement("input", {attributes: {type: "range"}, parent: sliderContainer});
         const minVal = this.#range[0];
@@ -66,8 +74,8 @@ export class DoubleRangeSlider extends HTMLElement {
         min.max = midVal.toString();
         max.min = midVal.toString();
         max.max = maxVal.toString();
-        min.style.width = "calc(50% + var(--dri-point-radius))";
-        max.style.width = "calc(50% + var(--dri-point-radius))";
+        min.style.width = "calc(50% + var(--dri-thumb-width))";
+        max.style.width = "calc(50% + var(--dri-thumb-width))";
         min.value = min.min;
         max.value = max.max;
         this.#min = min;
@@ -98,9 +106,10 @@ export class DoubleRangeSlider extends HTMLElement {
         if (min === this.#values[0] && max === this.#values[1])
             return;
         const center = this.#findMidpoint(parseFloat(this.#min.min), min, max, this.step);
-        if (center !== this.#midPoint && Number.isFinite(center))
+        if (Number.isFinite(center)) {
             this.#setMidpoint(center, min, max);
-        this.#dispatch(event.type as "input"|"change");
+            this.#dispatch(event.type as "input"|"change");
+        }
     }
 
     #dispatch(type: "input"|"change") {
@@ -154,13 +163,13 @@ export class DoubleRangeSlider extends HTMLElement {
         const range = this.#range[1] - this.#range[0];
         const minPercentage = (midPoint - this.#range[0])/range * 100;
         const maxPercentage = (this.#range[1] - midPoint)/range * 100;
-        this.#min.style.width = `calc(${minPercentage}% + var(--dri-point-radius))`;
-        this.#max.style.width = `calc(${maxPercentage}% + var(--dri-point-radius))`;
+        this.#min.style.width = `calc(${minPercentage}% + var(--dri-thumb-width))`;
+        this.#max.style.width = `calc(${maxPercentage}% + var(--dri-thumb-width))`;
         const sliderPos0 = (valueMin-this.#range[0])/(midPoint - this.#range[0])*100;
         const sliderPos1 = (valueMax-midPoint)/(this.#range[1] - midPoint)*100;
 
-        this.style.setProperty("--dri-position-0", `${sliderPos0}%`);
-        this.style.setProperty("--dri-position-1", `${sliderPos1}%`);
+        this.#sliderContainer.style.setProperty("--dri-position-0", `${sliderPos0}%`);
+        this.#sliderContainer.style.setProperty("--dri-position-1", `${sliderPos1}%`);
     }
 
     #adaptRange(valueMin: number, valueMax: number, options?: {setLower?: boolean; setUpper?: boolean;}) {
