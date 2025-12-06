@@ -11,7 +11,7 @@ export class DoubleRangeSlider extends HTMLElement {
     #midPoint: number = DoubleRangeSlider.#DEFAULT_RANGE[1]/2;
 
     // cf. https://developer.mozilla.org/de/docs/Web/HTML/Reference/Elements/input/range
-    static observedAttributes = ["list", "min", "max", "step"];
+    static observedAttributes = ["list", "min", "max", "step", "list", "disabled"];
 
 
     /**
@@ -42,6 +42,7 @@ export class DoubleRangeSlider extends HTMLElement {
         const style: HTMLStyleElement = document.createElement("style");
         style.textContent = ":host {--dri-track-height: 4px; "+
                 "--dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
+                "--dri-track-filled-color-disabled: #777; " +
                 "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " +
                 "--dri-thumb-hover-color: #fb8cc9ff; --dri-thumb-active-color: #fb8cc9ff;} \n" + 
             ".slider-container {display: flex; padding-right: calc(2 * var(--dri-thumb-width)); --dri-position-0: 0%; --dri-position-1: 100%; }\n" +
@@ -59,7 +60,13 @@ export class DoubleRangeSlider extends HTMLElement {
             "input::-webkit-slider-thumb {background-color: var(--dri-thumb-color); border-radius: var(--dri-thumb-border-radius); border: var(--dri-thumb-border-width) solid var(--dri-thumb-border-color); box-shadow: none; box-sizing: border-box; width: var(--dri-thumb-width); height: var(--dri-thumb-height);}\n" +
             "input:hover::-webkit-slider-thumb {background-color: var(--dri-thumb-hover-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
             "input:active::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
-            "input:focus-visible::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }";
+            "input:focus-visible::-webkit-slider-thumb {background-color: var(--dri-thumb-active-color); border-color: var(--dri-thumb-border-hover-color); }\n" +
+            // disabled state
+            "input:first-child:disabled::-moz-range-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color-disabled) var(--dri-position-0), var(--dri-track-filled-color-disabled)); }\n" +
+            "input:last-child:disabled::-moz-range-track { background: linear-gradient(to right, var(--dri-track-filled-color-disabled) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" + 
+            "input:first-child:disabled::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-color) var(--dri-position-0), var(--dri-track-filled-color-disabled) var(--dri-position-0), var(--dri-track-filled-color-disabled)); }\n" +
+            "input:last-child:disabled::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--dri-track-filled-color-disabled) var(--dri-position-1), var(--dri-track-color) var(--dri-position-1), var(--dri-track-color)); }\n" +
+            "input:disabled:hover {cursor: not-allowed}";
         const shadow: ShadowRoot = this.attachShadow({mode: "open", delegatesFocus: true});
         shadow.appendChild(style);
         const container = createElement("div", {parent: shadow});
@@ -130,6 +137,7 @@ export class DoubleRangeSlider extends HTMLElement {
             break;
         case "step":
         case "list":
+        case "disabled":
             if (newValue !== null) {
                 this.#min.setAttribute(name, newValue);
                 this.#max.setAttribute(name, newValue);
@@ -228,6 +236,17 @@ export class DoubleRangeSlider extends HTMLElement {
         if (step === "any")
             return undefined;
         return parseFloat(step!) || 1;
+    }
+
+    get disabled(): boolean {
+        return !!this.getAttribute("disabled");
+    }
+
+    set disabled(disabled: boolean) {
+        if (disabled)
+            this.setAttribute("disabled", "disabled");
+        else
+            this.removeAttribute("disabled");
     }
 
 }
