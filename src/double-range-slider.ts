@@ -4,6 +4,7 @@ export class DoubleRangeSlider extends HTMLElement {
 
     static readonly #DEFAULT_TAG: string = "double-range-slider";
     static readonly #DEFAULT_RANGE: [number, number] = [0, 100];
+    static readonly #SUPPORTS_ANCHOR: boolean = CSS.supports("anchor-name", "--test");
     static #tag: string|undefined;
     // min/max values
     #range: [number, number] = [...DoubleRangeSlider.#DEFAULT_RANGE];
@@ -153,6 +154,10 @@ export class DoubleRangeSlider extends HTMLElement {
                 if (formatter) {
                     DoubleRangeSlider.#setTooltipContent(this.#tooltip1, formatter(min));
                     DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
+                    if (!DoubleRangeSlider.#SUPPORTS_ANCHOR) {
+                        DoubleRangeSlider.#setTooltipPosition(this.#tooltip1, this.#min, min);
+                        DoubleRangeSlider.#setTooltipPosition(this.#tooltip2, this.#max, max);
+                    }
                 }
             }
             this.#dispatch(event.type as "input"|"change");
@@ -202,9 +207,25 @@ export class DoubleRangeSlider extends HTMLElement {
             DoubleRangeSlider.#setTooltipContent(this.#tooltip1, formatter(min));
             DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
             this.#interactionActive = true;
+            if (!DoubleRangeSlider.#SUPPORTS_ANCHOR) {
+                DoubleRangeSlider.#setTooltipPosition(this.#tooltip1, this.#min, min);
+                DoubleRangeSlider.#setTooltipPosition(this.#tooltip2, this.#max, max);
+            }
             this.#tooltips.forEach(t => t.classList.remove("hidden"));
         }
         this.#hoverEnd();
+    }
+
+    static #setTooltipPosition(tooltip: HTMLElement, range: HTMLInputElement, value: number) {
+        const l = parseFloat(range.min);
+        const u = parseFloat(range.max);
+        const frac = (value-l)/(u-l);
+        if (isFinite(frac)) {
+            const box = range.getBoundingClientRect();
+            const pos = box.x + frac * box.width;
+            tooltip.style.left = pos + "px";
+            tooltip.style.top = `calc(${box.y}px - 0.5 * var(--dri-thumb-height) - 1em)`;
+        }
     }
 
     #interactionEnd() {
@@ -233,11 +254,12 @@ export class DoubleRangeSlider extends HTMLElement {
         const min = parseFloat(inp?.min);
         const max = parseFloat(inp?.max);
         if (isFinite(min) && isFinite(max)) {
-            const rect: DOMRect = (event.currentTarget as HTMLElement).getClientRects()[0];
-            const left = rect.y;
+            //const rect: DOMRect = (event.currentTarget as HTMLElement).getClientRects()[0];
+            const rect: DOMRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+            const left = rect.x;
             const right = rect.x + rect.width;
             // not in range 0..1 !
-            const frac = (event.clientX - left)/(right-left);  // clientX correct?
+            const frac = (event.clientX - left)/(right-left) || 0;
             const value = min + frac * (max-min);
             DoubleRangeSlider.#setTooltipContent(this.#hoverTooltip, formatter(value));
             this.#hoverTooltip.style.left = event.clientX + "px";
@@ -304,8 +326,8 @@ export class DoubleRangeSlider extends HTMLElement {
         this.#max.min = midPoint.toString();
         this.#midPoint = midPoint;
         const range = this.#range[1] - this.#range[0];
-        const minPercentage = (midPoint - this.#range[0])/range * 100;
-        const maxPercentage = (this.#range[1] - midPoint)/range * 100;
+        const minPercentage = ((midPoint - this.#range[0])/range * 100) || 0;
+        const maxPercentage = ((this.#range[1] - midPoint)/range * 100) || 0;
         this.#min.style.width = `calc(${minPercentage}% + var(--dri-thumb-width))`;
         this.#max.style.width = `calc(${maxPercentage}% + var(--dri-thumb-width))`;
         const sliderPos0 = (valueMin-this.#range[0])/(midPoint - this.#range[0])*100;
