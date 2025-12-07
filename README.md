@@ -16,13 +16,13 @@ npm install double-range-slider-web
 
 Html:
 
-```
-<double-range-slider>
+```html
+<double-range-slider min="4" max="44" step="4"></double-range-slider>
 ```
 
 Typescript:
 
-```
+```javascript
 import {DoubleRangeSlider} from "double-range-slider-web";
 
 DoubleRangeSlider.register();
