@@ -10,7 +10,7 @@ export class DoubleRangeSlider extends HTMLElement {
     #midPoint: number = DoubleRangeSlider.#DEFAULT_RANGE[1]/2;
 
     // cf. https://developer.mozilla.org/de/docs/Web/HTML/Reference/Elements/input/range
-    static observedAttributes = ["list", "min", "max", "step", "list", "disabled"];
+    static observedAttributes = ["disabled", "list", "min", "max", "step"];
 
 
     /**

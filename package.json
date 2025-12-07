@@ -1,6 +1,6 @@
 {
-  "name": "double-range-slider",
-  "version": "1.0.0",
+  "name": "double-range-slider-web",
+  "version": "0.1.0",
   "type": "module",
   "private": true,
   "types": "./dist/double-range-slider.d.ts",
@@ -23,16 +23,16 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cnoelle/double-range-slider.git"
+    "url": "git+https://github.com/cnoelle/double-range-slider-web.git"
   },
   "bugs": {
-    "url": "https://github.com/cnoelle/double-range-slider/issues"
+    "url": "https://github.com/cnoelle/double-range-slider-web/issues"
   },
-  "homepage": "https://github.com/cnoelle/double-range-slider",
+  "homepage": "https://github.com/cnoelle/double-range-slider-web",
   "devDependencies": {
     "del-cli": "^7.0.0",
     "typedoc": "^0.28.14",
