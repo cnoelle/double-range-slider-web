@@ -142,8 +142,10 @@ export class DoubleRangeSlider extends HTMLElement {
         event.stopPropagation();
         const min = parseFloat(this.#min.value);
         const max = parseFloat(this.#max.value);
-        if (min === this.#values[0] && max === this.#values[1])
+        if (min === this.#values[0] && max === this.#values[1]) {
+            this.#dispatch(event.type as "input"|"change");
             return;
+        }
         const center = this.#findMidpoint(parseFloat(this.#min.min), min, max, this.step);
         if (Number.isFinite(center)) {
             this.#setMidpoint(center, min, max);

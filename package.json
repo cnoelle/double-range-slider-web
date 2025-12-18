@@ -1,8 +1,7 @@
 {
   "name": "double-range-slider-web",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
-  "private": true,
   "types": "./dist/double-range-slider.d.ts",
   "exports": {
     ".": {
@@ -14,7 +13,8 @@
   },
   "files": [
     "dist/**/*.js",
-    "dist/**/*.d.ts"
+    "dist/**/*.d.ts",
+    "slider.png"
   ],
   "scripts": {
     "build": "del-cli dist && tsc",
