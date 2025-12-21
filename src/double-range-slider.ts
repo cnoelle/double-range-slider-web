@@ -306,7 +306,17 @@ export class DoubleRangeSlider extends HTMLElement {
         }
     }
 
-    #setRangeInternal(min: number, max: number) {
+    #setRangeInternal(min: number, max: number, options?: {selectedValues?: [number, number]}) {
+        if (options?.selectedValues) {
+            const v: [number, number] = options!.selectedValues;
+            if (v.length !== 2)
+                throw new Error("Array of length != 2 passed: " + v)
+            if (v.findIndex(v => !Number.isFinite(v)) >= 0)
+                throw new Error("Invalid number passed: " + v);
+            if (v.findIndex(v => v < min || v > max) >= 0)
+                throw new Error("Selected values " + v + " not in range: " + [min, max]);
+            this.#values = [...v];
+        }
         const selectedRange = this.getValues();
         const newSelected = [selectedRange[0] >= min && selectedRange[0] <= max ? selectedRange[0] : min,
             selectedRange[1] >= min && selectedRange[1] <= max ? selectedRange[1] : max];
@@ -315,8 +325,6 @@ export class DoubleRangeSlider extends HTMLElement {
         this.#min.min = min.toString();
         this.#max.max = max.toString();
         this.#adaptRange(newSelected[0], newSelected[1], {setLower: true, setUpper: true});
-        this.#min.value = newSelected[0].toString();
-        this.#max.value = newSelected[1].toString();
     }
 
     #setMidpoint(midPoint: number, valueMin: number, valueMax: number) {
@@ -404,6 +412,25 @@ export class DoubleRangeSlider extends HTMLElement {
             this.setAttribute("disabled", "disabled");
         else
             this.removeAttribute("disabled");
+    }
+
+    setRange(min: number, max: number, options?: {selectedValues?: [number, number]; step?: number;}) {
+        if (options?.step !== undefined)
+            this.step = options?.step;
+        this.#setRangeInternal(min, max, options);
+    }
+
+    setValues(lower: number, upper: number) {
+        if (!Number.isFinite(lower) || !Number.isFinite(upper)) 
+            throw new Error("Invalid numbers "+ lower + " - " + upper);
+        if (lower > upper)
+            throw new Error("Lower range greater than upper: " + lower + " - " + upper);
+        const [min, max] = this.#range;
+        if (lower < min)
+            lower = min;
+        if (upper > max)
+            upper = max;
+        this.#adaptRange(lower, upper, {setLower: true, setUpper: true});
     }
 
     getTooltipFormatter(): ((data: number) => string|HTMLElement)|undefined {
