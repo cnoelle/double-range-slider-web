@@ -54,8 +54,8 @@ export class DoubleRangeSlider extends HTMLElement {
     constructor() {
         super();
         const style: HTMLStyleElement = document.createElement("style");
-        style.textContent = ":host {--dri-track-height: 4px; "+
-                "--dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
+        style.textContent = ":host { position: relative; " +
+                "--dri-track-height: 4px; --dri-track-color: #ccc; --dri-track-filled-color: #f72d9c; " +
                 "--dri-track-filled-color-disabled: #777; " +
                 "--dri-thumb-color: #ddd; --dri-thumb-width: 24px; --dri-thumb-height: 24px; --dri-thumb-border-radius: 24px; " +
                 "--dri-thumb-hover-color: #fb8cc9ff; --dri-thumb-active-color: #fb8cc9ff; --dri-thumb-disabled-color: #777; --dri-tooltip-z-index: 1} \n" + 
@@ -119,7 +119,7 @@ export class DoubleRangeSlider extends HTMLElement {
         this.#min = min;
         this.#max = max;
         this.#inputs = [min, max];
-        const changeListener = this.changed.bind(this);
+        const changeListener = this.#changed.bind(this);
         min.addEventListener("input", changeListener);
         max.addEventListener("input", changeListener);
         min.addEventListener("change", changeListener);
@@ -136,7 +136,7 @@ export class DoubleRangeSlider extends HTMLElement {
         [this.#tooltip1, this.#tooltip2, this.#hoverTooltip].forEach(tt => createElement("output", {parent: tt}));
     }
 
-    changed(event: Event) {
+    #changed(event: Event) {
         event.preventDefault();
         event.stopImmediatePropagation();
         event.stopPropagation();
@@ -155,8 +155,8 @@ export class DoubleRangeSlider extends HTMLElement {
                     DoubleRangeSlider.#setTooltipContent(this.#tooltip1, formatter(min));
                     DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
                     if (!DoubleRangeSlider.#SUPPORTS_ANCHOR) {
-                        DoubleRangeSlider.#setTooltipPosition(this.#tooltip1, this.#min, min);
-                        DoubleRangeSlider.#setTooltipPosition(this.#tooltip2, this.#max, max);
+                        this.#setTooltipPosition(this.#tooltip1, this.#min, min);
+                        this.#setTooltipPosition(this.#tooltip2, this.#max, max);
                     }
                 }
             }
@@ -208,23 +208,24 @@ export class DoubleRangeSlider extends HTMLElement {
             DoubleRangeSlider.#setTooltipContent(this.#tooltip2, formatter(max));
             this.#interactionActive = true;
             if (!DoubleRangeSlider.#SUPPORTS_ANCHOR) {
-                DoubleRangeSlider.#setTooltipPosition(this.#tooltip1, this.#min, min);
-                DoubleRangeSlider.#setTooltipPosition(this.#tooltip2, this.#max, max);
+                this.#setTooltipPosition(this.#tooltip1, this.#min, min);
+                this.#setTooltipPosition(this.#tooltip2, this.#max, max);
             }
             this.#tooltips.forEach(t => t.classList.remove("hidden"));
         }
         this.#hoverEnd();
     }
 
-    static #setTooltipPosition(tooltip: HTMLElement, range: HTMLInputElement, value: number) {
+    #setTooltipPosition(tooltip: HTMLElement, range: HTMLInputElement, value: number) {
         const l = parseFloat(range.min);
         const u = parseFloat(range.max);
         const frac = (value-l)/(u-l);
         if (isFinite(frac)) {
-            const box = range.getBoundingClientRect();
-            const pos = box.x + frac * box.width;
+            const rangeBox = range.getBoundingClientRect();
+            const totalBox = this.getBoundingClientRect();
+            const pos = rangeBox.x - totalBox.x + frac * rangeBox.width - 10;
             tooltip.style.left = pos + "px";
-            tooltip.style.top = `calc(${box.y}px - 0.5 * var(--dri-thumb-height) - 1em)`;
+            tooltip.style.top = "calc(-0.5 * var(--dri-thumb-height) - 1em)";
         }
     }
 
@@ -254,16 +255,18 @@ export class DoubleRangeSlider extends HTMLElement {
         const min = parseFloat(inp?.min);
         const max = parseFloat(inp?.max);
         if (isFinite(min) && isFinite(max)) {
-            //const rect: DOMRect = (event.currentTarget as HTMLElement).getClientRects()[0];
             const rect: DOMRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
             const left = rect.x;
             const right = rect.x + rect.width;
-            // not in range 0..1 !
             const frac = (event.clientX - left)/(right-left) || 0;
             const value = min + frac * (max-min);
             DoubleRangeSlider.#setTooltipContent(this.#hoverTooltip, formatter(value));
-            this.#hoverTooltip.style.left = event.clientX + "px";
-            this.#hoverTooltip.style.top = (rect.top - 20) + "px";
+            let ttLeft = event.clientX - left - 10;
+            const isMax = inp === this.#max;
+            if (isMax)
+                ttLeft += this.#min.getBoundingClientRect().width;
+            this.#hoverTooltip.style.left = `${ttLeft}px`;
+            this.#hoverTooltip.style.top = "calc(-0.5 * var(--dri-thumb-height) - 1em)";
         }
     }
 
@@ -478,7 +481,7 @@ function createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, option
         else
             options.classes.forEach(cl => el.classList.add(cl));
     }
-    if (options?.id)  // TODO some base id + sensible suffix
+    if (options?.id)
         el.id = options.id;
     if (options?.role)
         el.role = options?.role;
