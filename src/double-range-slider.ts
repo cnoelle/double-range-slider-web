@@ -2,7 +2,8 @@ export class DoubleRangeSlider extends HTMLElement {
 
     static readonly #DEFAULT_TAG: string = "double-range-slider";
     static readonly #DEFAULT_RANGE: [number, number] = [0, 100];
-    static readonly #SUPPORTS_ANCHOR: boolean = CSS.supports("anchor-name", "--test");
+    // Firefox issue: doesn't allow to target range thumb as anchor target: https://bugzilla.mozilla.org/show_bug.cgi?id=1993699 as of v151
+    static readonly #SUPPORTS_ANCHOR: boolean = CSS.supports("anchor-name", "--test") && !(globalThis.navigator?.userAgent?.startsWith("Mozilla"));
     static #tag: string|undefined;
     // min/max values
     #range: [number, number] = [...DoubleRangeSlider.#DEFAULT_RANGE];
@@ -91,6 +92,7 @@ export class DoubleRangeSlider extends HTMLElement {
             "input:disabled:hover {cursor: not-allowed}\n" + 
             // tooltip
             ".slider-tooltip {position: absolute; position-area: top center; z-index: var(--dri-tooltip-z-index); }\n" +
+            // not working in current Firefox (v151) :( => https://bugzilla.mozilla.org/show_bug.cgi?id=1993699
             "input:first-child::-moz-range-thumb { anchor-name: --thumb1; }\n" +
             "input:first-child::-webkit-slider-thumb { anchor-name: --thumb1; }\n" +
             "input:last-child::-moz-range-thumb { anchor-name: --thumb2; }\n" +
